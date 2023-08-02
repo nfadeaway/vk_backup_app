@@ -1,4 +1,6 @@
 # О проекте
+![Static Badge](https://img.shields.io/badge/python%20-%20black?logo=python&logoColor=%23FFDE56)
+
 [Курсовая работа "Резервное копирование"](https://github.com/netology-code/py-diplom-basic)
 
 Программа для копирования фотографий из альбомов пользователей социальной сети "ВКонтакте" в облачные хранилища: Я.Диск, Google Диск.

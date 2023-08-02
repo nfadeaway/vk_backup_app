@@ -1,12 +1,3 @@
-# Для доступа к собственным личным альбомам в правах токена VK в scope должен быть прописан также атрибут photos.
-# Для доступа к чужим открытым альбомам этот параметр не требуется.
-#
-# Для имен файлов помимо даты мною было добавлено также время, так как большинство файлов из альбомов имеют одинаковое
-# число лайков (от 0 до 2) и загружаются в один день.
-#
-# Для работы с GoogleDrive используется библиотека pydrive, в папке с main.py должен находиться файл
-# client_secrets.json, полученный через Google Cloud - Credentials - OAuth 2.0 Client IDs
-
 import requests
 from datetime import datetime as dt
 import time
@@ -15,7 +6,7 @@ from pprint import pprint
 from pydrive.auth import GoogleAuth
 import io
 import json
-
+import configparser
 
 class VK:
 
@@ -29,14 +20,12 @@ class VK:
         url = 'https://api.vk.com/method/users.get'
         params = {'user_ids': self.id}
         response = requests.get(url, params={**self.params, **params})
-        # pprint(response.json())
         return response.json()
 
     def users_albums_info(self):
         url = 'https://api.vk.com/method/photos.getAlbums'
         params = {'owner_id': self.id, 'need_system': '1'}
         response = requests.get(url, params={**self.params, **params})
-        # pprint(response.json())
         return response.json()
 
     @staticmethod
@@ -86,7 +75,6 @@ class VK:
                 photos_info[ph_ind]['file_name'] += '_' + photos_info[ph_ind]['date'] + '.jpg'
             else:
                 photos_info[ph_ind]['file_name'] += '.jpg'
-        # pprint(photos_info)
         return photos_info
 
 
@@ -154,13 +142,9 @@ class GDrive:
         headers = {'Authorization': 'Bearer ' + self.access_token}
         params = {'q': "name = '" + folder_name + "'"}
         response = requests.get(url, headers=headers, params=params)
-        # pprint(response.json())
-        # print(response.status_code)
         if response.status_code == 200:
             for item in range(len(response.json()['files'])):
                 if response.json()['files'][item]['mimeType'] == 'application/vnd.google-apps.folder':
-                    # pprint(response.json())
-                    # pprint(response.json()['files'][0]['id'])
                     return response.json()['files'][0]['id']
         return False
 
@@ -170,8 +154,6 @@ class GDrive:
         metadata = {"name": folder_name, "mimeType": "application/vnd.google-apps.folder"}
         files = {'data': ('metadata', json.dumps(metadata), 'application/json')}
         response = requests.post(url, files=files, headers=headers)
-        # pprint(response.json())
-        # print(response.status_code)
         if response.status_code == 200:
             print('Папка успешно создана')
             return response.json()['id']
@@ -185,8 +167,6 @@ class GDrive:
         files = {'data': ('metadata', json.dumps(metadata), 'application/json'),
                  'file': io.BytesIO(requests.get(photo_url).content)}
         response = requests.post(url, files=files, headers={"Authorization": "Bearer " + self.access_token})
-        # pprint(response.json())
-        # print(response.status_code)
         return response.status_code
 
 
@@ -201,8 +181,11 @@ def write_json_file(photos_for_upload):
 
 
 def main():
-    access_token_vk = 'TOKEN API VK'
-    access_token_ya = 'TOKEN API YA DISK'
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
+
+    access_token_vk = config['VK']['token']
+    access_token_ya = config['YADisk']['token']
 
     user_id = input('Введите id аккаунта VK: ')
     vk = VK(access_token_vk, user_id)
@@ -227,11 +210,11 @@ def main():
                               'чтобы именем папки являлось имя альбома: ')
     if folder_for_upload == '':
         folder_for_upload = selected_album_for_upload['album_title']
-    # -------------------------------------Выбираем целевой диск--------------------------------------------------------
+    # Выбираем целевой диск
     select_cloud_service = input('Выберите облачный сервис для загрузки: [1] - Яндекс.Диск, [2] - GoogleDrive: ')
     if select_cloud_service not in ('1', '2'):
         return print('Введено неверное значение. Необходимо ввести 1 или 2')
-    # -------------------------------------Работаем с Я.Диск------------------------------------------------------------
+    # Работаем с Я.Диск
     elif select_cloud_service == '1':
         print('Проверяем есть ли указанная папка в корневой директории яндекс.диска...')
         if not ya_disk.check_folder(folder_for_upload):
@@ -248,7 +231,7 @@ def main():
             if ya_disk.upload_photo(folder_for_upload + '/' + selected_photos_for_upload[photo]['file_name'],
                                     selected_photos_for_upload[photo]['vk_photo_url']) != 202:
                 print('Ошибка выполнения операции')
-    # -------------------------------------Работаем с Google Disk-------------------------------------------------------
+    # Работаем с Google Disk
     elif select_cloud_service == '2':
         gdisk = GDrive()
         print('Проверяем есть ли указанная папка в корневой директории яндекс.диска...')

@@ -14,7 +14,7 @@ token=
 [YADisk]
 token=
 ```
-Для работы с GoogleDrive используется библиотека **pydrive**. В папке с приложением должен находиться файл
+Для работы с GoogleDrive используется библиотека **pydrive**. В папке с программой должен находиться файл
 `client_secrets.json`, полученный через Google Cloud - Credentials - OAuth 2.0 Client IDs.
 
 ## Запись работы программы

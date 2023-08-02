@@ -2,7 +2,6 @@ import requests
 from datetime import datetime as dt
 import time
 from tqdm import tqdm
-from pprint import pprint
 from pydrive.auth import GoogleAuth
 import io
 import json
@@ -16,45 +15,45 @@ class VK:
         self.version = version
         self.params = {'access_token': self.token, 'v': self.version}
 
-    def users_info(self):
+    def get_user_info(self):
         url = 'https://api.vk.com/method/users.get'
         params = {'user_ids': self.id}
         response = requests.get(url, params={**self.params, **params})
         return response.json()
 
-    def users_albums_info(self):
+    def get_albums_info(self):
         url = 'https://api.vk.com/method/photos.getAlbums'
         params = {'owner_id': self.id, 'need_system': '1'}
         response = requests.get(url, params={**self.params, **params})
         return response.json()
 
     @staticmethod
-    def select_album_for_upload(users_albums_info):
+    def select_album_for_upload(get_albums_info):
         print(f'Доступные альбомы фотографий:\n'
               f'|')
-        for albums_ind in range(len(users_albums_info['response']['items'])):
-            print(f"|- {albums_ind + 1}. [{users_albums_info['response']['items'][albums_ind]['title']}], "
-                  f"({users_albums_info['response']['items'][albums_ind]['size']} фото)")
+        for albums_ind in range(len(get_albums_info['response']['items'])):
+            print(f"|- {albums_ind + 1}. [{get_albums_info['response']['items'][albums_ind]['title']}], "
+                  f"({get_albums_info['response']['items'][albums_ind]['size']} фото)")
         print()
         selected_album = input('Введите номер альбома для сохранения на облачный сервис: ')
         if not selected_album.isdigit() \
-                or int(selected_album) not in range(1, len(users_albums_info['response']['items']) + 1):
+                or int(selected_album) not in range(1, len(get_albums_info['response']['items']) + 1):
             print('Ошибка! Введен некорректный номер альбома!')
             return False
         num_of_photos = input('Введите количество фотографий выбранного альбома для сохранения на облачный сервис: ')
         if not num_of_photos.isdigit() \
-                or int(num_of_photos) not in range(1, users_albums_info['response']['items'][int(selected_album) - 1][
+                or int(num_of_photos) not in range(1, get_albums_info['response']['items'][int(selected_album) - 1][
                                                           'size'] + 1):
             print('Ошибка! Введено некорректное количество фотографий!')
             return False
-        print(f"Выбран альбом [{users_albums_info['response']['items'][int(selected_album) - 1]['title']}], "
+        print(f"Выбран альбом [{get_albums_info['response']['items'][int(selected_album) - 1]['title']}], "
               f"количество фотографий "
-              f"[{int(num_of_photos)}/{users_albums_info['response']['items'][int(selected_album) - 1]['size']}]")
-        return {'album_id': users_albums_info['response']['items'][int(selected_album) - 1]['id'],
+              f"[{int(num_of_photos)}/{get_albums_info['response']['items'][int(selected_album) - 1]['size']}]")
+        return {'album_id': get_albums_info['response']['items'][int(selected_album) - 1]['id'],
                 'number_of_photos': num_of_photos,
-                'album_title': users_albums_info['response']['items'][int(selected_album) - 1]['title']}
+                'album_title': get_albums_info['response']['items'][int(selected_album) - 1]['title']}
 
-    def users_photos_info(self, album_id, number_of_photos):
+    def get_user_photos_info(self, album_id, number_of_photos):
         photos_info = []
         file_names = []
         url = 'https://api.vk.com/method/photos.get'
@@ -94,8 +93,7 @@ class YaUploader:
                     folders.append(response.json()['_embedded']['items'][item]['name'])
             if folder_name not in folders:
                 return False
-            else:
-                return True
+            return True
 
     def upload_photo(self, file_path, photo_url):
         url = 'https://cloud-api.yandex.net/v1/disk/resources/upload'
@@ -107,9 +105,8 @@ class YaUploader:
             if response_status_operation.json()['status'] == 'failed':
                 print('Ошибка! Скопировать файл не удалось, переходим к следующему')
                 return
-            else:
-                time.sleep(1)
-                response_status_operation = requests.get(response.json()['href'], headers=headers)
+            time.sleep(1)
+            response_status_operation = requests.get(response.json()['href'], headers=headers)
         return response.status_code
 
     def create_folder(self, folder_name):
@@ -122,12 +119,6 @@ class YaUploader:
         else:
             print(f"Ошибка! {response.json()['message']}")
         return response.status_code
-
-    def files_on_disk(self):
-        url = 'https://cloud-api.yandex.net/v1/disk/resources/files'
-        headers = {'Authorization': f'OAuth {self.token}'}
-        pprint(f'Информация о файлах на диске:{requests.get(url, headers=headers).json()}')
-        return
 
 
 class GDrive:
@@ -157,8 +148,7 @@ class GDrive:
         if response.status_code == 200:
             print('Папка успешно создана')
             return response.json()['id']
-        else:
-            print(f"Ошибка! {response.json()['error']['message']}")
+        print(f"Ошибка! {response.json()['error']['message']}")
         return 'error'
 
     def upload_photo(self, folder_id, filename, photo_url):
@@ -191,24 +181,22 @@ def main():
     vk = VK(access_token_vk, user_id)
     ya_disk = YaUploader(access_token_ya)
 
-    user_name = vk.users_info()
+    user_name = vk.get_user_info()
     if len(user_name['response']) == 0:
         print('Введен некорректный id')
         return
-    else:
-        print(f"Имя: {user_name['response'][0]['first_name']} {user_name['response'][0]['last_name']}")
+    print(f"Имя: {user_name['response'][0]['first_name']} {user_name['response'][0]['last_name']}")
 
-    albums = vk.users_albums_info()
+    albums = vk.get_albums_info()
     selected_album_for_upload = vk.select_album_for_upload(albums)
     if not selected_album_for_upload:
         return
-    else:
-        selected_photos_for_upload = vk.users_photos_info(selected_album_for_upload['album_id'],
-                                                          selected_album_for_upload['number_of_photos'])
+    selected_photos_for_upload = vk.get_user_photos_info(selected_album_for_upload['album_id'],
+                                                         selected_album_for_upload['number_of_photos'])
 
     folder_for_upload = input('Введите название папки для загрузки или оставьте поле пустым и нажмите [Enter], '
                               'чтобы именем папки являлось имя альбома: ')
-    if folder_for_upload == '':
+    if not folder_for_upload:
         folder_for_upload = selected_album_for_upload['album_title']
     # Выбираем целевой диск
     select_cloud_service = input('Выберите облачный сервис для загрузки: [1] - Яндекс.Диск, [2] - GoogleDrive: ')
@@ -221,8 +209,7 @@ def main():
             print('Папка отсутствует. Создаём...')
             if ya_disk.create_folder(folder_for_upload) != 201:
                 return
-            else:
-                print('Начинаем процесс копирования...')
+            print('Начинаем процесс копирования...')
         else:
             print('Папка уже существует в директории. Начинаем процесс копироания...')
 
@@ -241,8 +228,7 @@ def main():
             gdisk_folder_id = gdisk.create_folder(folder_for_upload)
             if gdisk_folder_id == 'error':
                 return
-            else:
-                print('Начинаем процесс копирования...')
+            print('Начинаем процесс копирования...')
         else:
             print('Папка уже существует в директории. Начинаем процесс копироания...')
 

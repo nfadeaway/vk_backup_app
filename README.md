@@ -6,6 +6,11 @@
 Программа для копирования фотографий из альбомов пользователей социальной сети "ВКонтакте" в облачные хранилища: Я.Диск, Google Диск.
 
 ## Дополнительная информация
+Для работы программы необходимо получить:
+- [токен VK](https://docs.google.com/document/d/1_xt16CMeaEir-tWLbUFyleZl6woEdJt-7eyva1coT3w/edit)
+- [токен Я.Диск](https://yandex.ru/dev/disk/poligon/)
+- [файл `client_secrets.json`](https://support.google.com/cloud/answer/6158849?hl=en)
+
 Для доступа к собственным альбомам в правах токена VK в scope должен быть прописан атрибут `photos`.
 Для доступа к чужим открытым альбомам этот параметр не требуется.
 
@@ -18,8 +23,7 @@ token=
 [YADisk]
 token=
 ```
-Для работы с GoogleDrive используется библиотека **pydrive**. В папке с программой должен находиться файл
-`client_secrets.json`, полученный через Google Cloud - Credentials - OAuth 2.0 Client IDs.
+Для работы с GoogleDrive используется библиотека **pydrive**. Файл `client_secrets.json` должен находиться в папке с программой.
 
 ## Запись работы программы
 ![Работа программы](/gif/vk_backup_app.gif)

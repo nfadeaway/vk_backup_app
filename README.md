@@ -7,7 +7,7 @@
 
 ## Дополнительная информация
 Для работы программы необходимо получить:
-- [токен VK](https://docs.google.com/document/d/1_xt16CMeaEir-tWLbUFyleZl6woEdJt-7eyva1coT3w/edit)
+- [токен VK](https://dev.vk.com/api/access-token/getting-started)
 - [токен Я.Диск](https://yandex.ru/dev/disk/poligon/)
 - [файл `client_secrets.json`](https://support.google.com/cloud/answer/6158849?hl=en)
 
